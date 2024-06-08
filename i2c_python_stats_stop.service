@@ -1,0 +1,6 @@
+[Unit]
+Description=This is a service to stop i2c_python_stats.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/systemctl stop i2c_python_stats.service
