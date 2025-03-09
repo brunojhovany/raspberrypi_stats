@@ -41,5 +41,5 @@ Enjoy!
     * `sudo systemctl status raspberry_stats.service`
 
 ## Preview
-![plot](./assets/images/raspberry_stats.jpeg)
+![plot](./assets/images/raspberry_stats2.jpeg)
 ![plot](./assets/images/raspberry_stats_clasic.jpg)
