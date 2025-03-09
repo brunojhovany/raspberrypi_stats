@@ -1,6 +1,7 @@
 import datetime
 import time
-import Adafruit_SSD1306
+import board
+import adafruit_ssd1306
 import sys
 from PIL import Image, ImageDraw, ImageFont
 import os
@@ -12,7 +13,7 @@ assets_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "assets"
 
 @dataclass
 class Display:
-    disp: Adafruit_SSD1306
+    disp: adafruit_ssd1306
     image: Image
     draw: ImageDraw
     padding: int
@@ -65,12 +66,12 @@ def config() -> Config:
     )
 
 def display(conf: Config) -> Display:
-    display = Adafruit_SSD1306.SSD1306_128_32(rst=conf.RST)
-    display.begin()
+    i2c = board.I2C() 
+    display = adafruit_ssd1306.SSD1306_I2C(128,32, i2c, addr=0x3C, reset=None)
+    display.fill(0)
+    display.show()
 
     # clear display
-    display.clear()
-    display.display()
 
     # create blank image for drawing
     image = Image.new('1', (display.width, display.height))
@@ -91,8 +92,8 @@ def display(conf: Config) -> Display:
 
 def shutdown(msg: str, display: Display, conf: Config) -> None:
     # clear display
-    display.disp.clear()
-    display.disp.display()
+    display.disp.fill(0)
+    display.disp.show()
 
     # create blank image for drawing
     display.draw.rectangle((0,0,display.disp.width,display.disp.height), outline=0, fill=0)
@@ -102,7 +103,7 @@ def shutdown(msg: str, display: Display, conf: Config) -> None:
 
     # display image
     display.disp.image(display.image)
-    display.disp.display()
+    display.disp.show()
 
     # wait 3 seconds
     time.sleep(3)
@@ -110,8 +111,8 @@ def shutdown(msg: str, display: Display, conf: Config) -> None:
     time.sleep(3)
     
     # clear display and exit
-    display.disp.clear()
-    display.disp.display()
+    display.disp.fill(0)
+    display.disp.show()
     sys.exit()
 
 def timeToWork(config: Config) -> None:
@@ -132,7 +133,7 @@ def bootImage(display: Display):
     image = Image.open(assets_path+'/ppm/rasp_logo.ppm').convert('1')
     # Display image.
     display.disp.image(image)
-    display.disp.display()
+    display.disp.show()
     time.sleep(3)
 
 # Shell scripts for system monitoring from here : https://unix.stackexchange.com/questions/119126/command-to-display-memory-usage-disk-usage-and-cpu-load

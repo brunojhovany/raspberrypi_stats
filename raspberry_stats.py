@@ -2,16 +2,18 @@ import time
 import psutil
 import socket
 import subprocess
-from Adafruit_SSD1306 import SSD1306_128_32
+import board
+import adafruit_ssd1306
 from PIL import Image, ImageDraw, ImageFont
 
 class RaspberryPiStatsDisplay:
     def __init__(self):
         # Initialize the OLED display
-        self.disp = SSD1306_128_32(rst=None)
-        self.disp.begin()
-        self.disp.clear()
-        self.disp.display()
+        i2c = board.I2C() 
+        self.disp = adafruit_ssd1306.SSD1306_I2C(128,32, i2c, addr=0x3C, reset=None)
+        # self.disp.begin()
+        self.disp.fill(0)
+        self.disp.show()
 
         # Set dimensions for vertical orientation
         self.width = self.disp.height
@@ -124,7 +126,7 @@ class RaspberryPiStatsDisplay:
         stats_texts = [
             f"R:{stats['ram_usage']:.0f}%",
             f"D:{stats['disk_usage']:.0f}%",
-            f"{stats['cpu_temp']}",
+            f"{stats['cpu_temp']} ",
         ]
 
         y_offset = 86
@@ -135,7 +137,7 @@ class RaspberryPiStatsDisplay:
         # Rotate and display the image on the display
         rotated_image = self.image.rotate(90, expand=1)
         self.disp.image(rotated_image)
-        self.disp.display()
+        self.disp.show()
 
     def draw_centered_text(self, text, y, font):
         text_width, _ = self.draw.textsize(text, font=font)
