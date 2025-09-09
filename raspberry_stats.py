@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import time
 import psutil
 import socket
@@ -21,8 +22,9 @@ class RaspberryPiStatsDisplay:
         self.image = Image.new('1', (self.width, self.height))
         self.draw = ImageDraw.Draw(self.image)
 
-        # Load fonts
+        # Load fonts (cached by size to avoid reloading each frame)
         self.font_name = "Hack-Regular.ttf"
+        self._font_cache = {}
         self.font_small = self.load_font(size=10)
         self.font_medium = self.load_font(size=12)
         self.font_large = self.load_font(size=24)
@@ -34,11 +36,16 @@ class RaspberryPiStatsDisplay:
         self.radius_inner = 12
 
     def load_font(self, size):
+        # Cache TTF instances by size to prevent reloading from disk every frame
+        key = (self.font_name, size)
+        if key in self._font_cache:
+            return self._font_cache[key]
         try:
-            return ImageFont.truetype(self.font_name, size)
+            f = ImageFont.truetype(self.font_name, size)
         except IOError:
-            # If the font is not available, use a default font
-            return ImageFont.load_default()
+            f = ImageFont.load_default()
+        self._font_cache[key] = f
+        return f
 
     def get_local_ip(self):
         try:

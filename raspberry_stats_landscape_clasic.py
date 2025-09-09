@@ -20,6 +20,12 @@ class Display:
     top: int
     bottom: int
     x: int
+    # cache icons (use PIL Image class type for hints)
+    icon_net: Image.Image | None = None
+    icon_cpu: Image.Image | None = None
+    icon_temp: Image.Image | None = None
+    icon_mem: Image.Image | None = None
+    icon_disk: Image.Image | None = None
 
 @dataclass
 class Config:
@@ -79,7 +85,7 @@ def display(conf: Config) -> Display:
 
     draw = ImageDraw.Draw(image)
 
-    return Display(
+    d = Display(
         disp=display,
         image=image,
         # get drawing object to draw on image
@@ -87,8 +93,18 @@ def display(conf: Config) -> Display:
         padding=padding,
         top=padding,
         bottom=display.height-padding,
-        x=0
+        x=0,
     )
+    # preload icons once
+    try:
+        d.icon_net = Image.open(assets_path+'/images/network.png').convert('1')
+        d.icon_cpu = Image.open(assets_path+'/images/cpu.png').convert('1')
+        d.icon_temp = Image.open(assets_path+'/images/temp.png').convert('1')
+        d.icon_mem = Image.open(assets_path+'/images/mem.png').convert('1')
+        d.icon_disk = Image.open(assets_path+'/images/storage.png').convert('1')
+    except Exception:
+        pass
+    return d
 
 def shutdown(msg: str, display: Display, conf: Config) -> None:
     # clear display
@@ -172,35 +188,41 @@ def main(conf: Config, disp: Display) -> None:
     systemStats = getSystemStats()
 
     if count_for_disk < 20:
-        raspIcon = Image.open(assets_path+'/images/network.png').convert('1')
-        disp.draw.bitmap((disp.x, disp.top+1), raspIcon, fill=255)
+        icon = disp.icon_net
+        if icon:
+            disp.draw.bitmap((disp.x, disp.top+1), icon, fill=255)
         disp.draw.text((disp.x+20, disp.top+1),       systemStats.IP,  font=conf.FONT, fill=25)
 
         # Write CPU stats.
-        loadIcon = Image.open(assets_path+'/images/cpu.png').convert('1')
-        disp.draw.bitmap((disp.x, disp.top+19), loadIcon, fill=255)
+        icon = disp.icon_cpu
+        if icon:
+            disp.draw.bitmap((disp.x, disp.top+19), icon, fill=255)
         disp.draw.text((disp.x+20, disp.top+20),     systemStats.CPU, font=conf.FONT, fill=25)
     
     # switch between stats
     if count_for_disk >= 20 and count_for_disk < 40:
         # write cpu temp
-        cpuTempIcon = Image.open(assets_path+'/images/temp.png').convert('1')
-        disp.draw.bitmap((disp.x, disp.top+1), cpuTempIcon, fill=255)
+        icon = disp.icon_temp
+        if icon:
+            disp.draw.bitmap((disp.x, disp.top+1), icon, fill=255)
         disp.draw.text((disp.x+20, disp.top+1),       systemStats.TEMP,  font=conf.FONT, fill=25)
 
         # Write CPU stats.
-        loadIcon = Image.open(assets_path+'/images/cpu.png').convert('1')
-        disp.draw.bitmap((disp.x, disp.top+19), loadIcon, fill=255)
+        icon = disp.icon_cpu
+        if icon:
+            disp.draw.bitmap((disp.x, disp.top+19), icon, fill=255)
         disp.draw.text((disp.x+20, disp.top+20),     systemStats.CPU, font=conf.FONT, fill=25)
     
     # Write memory stats and disk stats.
     elif count_for_disk >=40 and count_for_disk <=60:
-        loadIcon = Image.open(assets_path+'/images/mem.png').convert('1')
-        disp.draw.bitmap((disp.x, disp.top+1), loadIcon, fill=255)
+        icon = disp.icon_mem
+        if icon:
+            disp.draw.bitmap((disp.x, disp.top+1), icon, fill=255)
         disp.draw.text((disp.x+22, disp.top+1),    systemStats.MEM,  font=conf.FONT, fill=25)
 
-        loadIcon = Image.open(assets_path+'/images/storage.png').convert('1')
-        disp.draw.bitmap((disp.x, disp.top+19), loadIcon, fill=255)
+        icon = disp.icon_disk
+        if icon:
+            disp.draw.bitmap((disp.x, disp.top+19), icon, fill=255)
         disp.draw.text((disp.x+22, disp.top+20),    systemStats.DISK,  font=conf.FONT, fill=25)
         if count_for_disk == 60:
             count_for_disk=0

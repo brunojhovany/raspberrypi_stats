@@ -1,0 +1,19 @@
+[Unit]
+Description=Raspberry Pi OLED Stats (Python version)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/env python3 /usr/local/bin/raspberrypi_stats_py
+Restart=always
+RestartSec=5
+User=pi
+Group=pi
+EnvironmentFile=-/etc/default/raspberrypi_stats_py
+WorkingDirectory=/usr/local/bin
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
