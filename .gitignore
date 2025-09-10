@@ -1,0 +1,24 @@
+# Build artifacts
+build/
+*.o
+
+# Python bytecode
+__pycache__/
+*.pyc
+
+# Systemd unit/service files generated or copied
+*.service
+*.timer
+*.env
+
+# Editor/OS files
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+*.log
+
+# VSCode
+.vscode/
