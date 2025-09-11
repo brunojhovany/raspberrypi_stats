@@ -7,9 +7,12 @@ __pycache__/
 *.pyc
 
 # Systemd unit/service files generated or copied
-*.service
-*.timer
-*.env
+# Exclude all except the main service/env
+systemd/*.timer
+systemd/raspberrypi_stats_cpp.*
+systemd/raspberrypi_stats_py.*
+!systemd/raspberrypi_stats.service
+!systemd/raspberrypi_stats.env
 
 # Editor/OS files
 *.swp
