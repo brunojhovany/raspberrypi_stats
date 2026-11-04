@@ -8,6 +8,9 @@ add_executable(raspberrypi_stats_cpp
     src/main.cpp
     src/ssd1306.cpp
     src/stats.cpp
+    src/portrait.cpp
+    src/eva_view.cpp
+    src/saver.cpp
 )
 
 target_include_directories(raspberrypi_stats_cpp PRIVATE src)

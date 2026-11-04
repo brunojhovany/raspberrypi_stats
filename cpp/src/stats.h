@@ -11,7 +11,18 @@ struct Stats {
     std::string cpu_temp;      // e.g. "54°C"
     std::string voltage;       // e.g. "1.25V"
     uint32_t throttle_raw = 0; // raw hex flags from vcgencmd get_throttled
-    bool throttled = false;    // any throttling/undervoltage active
+    bool throttled = false;    // any throttling/undervoltage active (bits 0-3)
+    bool throttle_ok = false;  // vcgencmd answered with a parsable value
+
+    // Decoded flags from vcgencmd get_throttled
+    bool uv_now = false;       // bit 0:  under-voltage detected right now
+    bool cap_now = false;      // bit 1:  ARM frequency capped
+    bool thr_now = false;      // bit 2:  currently throttled
+    bool temp_now = false;     // bit 3:  soft temperature limit active
+    bool uv_boot = false;      // bit 16: under-voltage has occurred since boot
+    bool cap_boot = false;     // bit 17
+    bool thr_boot = false;     // bit 18
+    bool temp_boot = false;    // bit 19
 };
 
 // Collect stats from /proc and vcgencmd; all functions are non-throwing

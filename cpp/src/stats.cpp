@@ -102,15 +102,36 @@ static std::string readVoltage() {
     return v; // typically like 1.2500V
 }
 
-static uint32_t readThrottleRaw() {
-    std::string t = runCmd("vcgencmd get_throttled | cut -d '=' -f2");
-    if (t.empty()) return 0;
-    // Expect 0xNNNNNNNN
-    uint32_t val = 0;
-    if (t.rfind("0x",0)==0) {
-        std::stringstream ss; ss << std::hex << t; ss >> val; return val;
+// Returns false if vcgencmd failed or its output did not parse.
+static bool readThrottleRaw(uint32_t& val) {
+    val = 0;
+    // RPI_STATS_FAKE_THROTTLED=0x50005 simulates a reading (to test the alert screen)
+    const char* fake = std::getenv("RPI_STATS_FAKE_THROTTLED");
+    std::string t = fake ? std::string(fake)
+                         : runCmd("vcgencmd get_throttled 2>/dev/null | cut -d '=' -f2");
+    if (t.rfind("0x", 0) != 0) return false; // expect 0xNNNNN
+    char* end = nullptr;
+    unsigned long v = std::strtoul(t.c_str(), &end, 16);
+    if (end == t.c_str() + 2) return false;   // no hex digits after 0x
+    val = static_cast<uint32_t>(v);
+    return true;
+}
+
+// Fallback when vcgencmd is unavailable: the rpi_volt hwmon driver exposes the
+// same firmware under-voltage flag as in0_lcrit_alarm.
+static bool readHwmonUndervolt(bool& alarm) {
+    for (int i = 0; i < 16; ++i) {
+        std::string base = "/sys/class/hwmon/hwmon" + std::to_string(i) + "/";
+        std::ifstream n(base + "name");
+        std::string name;
+        if (!(n >> name) || name != "rpi_volt") continue;
+        std::ifstream a(base + "in0_lcrit_alarm");
+        int v = 0;
+        if (!(a >> v)) return false;
+        alarm = v != 0;
+        return true;
     }
-    return val;
+    return false;
 }
 
 Stats collectStats() {
@@ -122,10 +143,21 @@ Stats collectStats() {
     s.cpu_temp = readCpuTemp();
     s.ip_last_octet = readIpLastOctet();
     s.voltage = readVoltage();
-    s.throttle_raw = readThrottleRaw();
-    // Bits of interest (per Raspberry Pi docs):
-    // 0 under-voltage, 1 arm freq capped, 2 currently throttled, 3 soft temp limit active
-    // We'll flag "throttled" if any of these lower bits set.
-    s.throttled = (s.throttle_raw & 0xF) != 0;
+    s.throttle_ok = readThrottleRaw(s.throttle_raw);
+    if (!s.throttle_ok) {
+        bool alarm = false;
+        if (readHwmonUndervolt(alarm) && alarm) s.throttle_raw = 0x10001; // uv now + since boot
+    }
+    // Bits (Raspberry Pi docs): 0-3 are "now", 16-19 are "has occurred since boot".
+    const uint32_t r = s.throttle_raw;
+    s.uv_now    = r & (1u << 0);
+    s.cap_now   = r & (1u << 1);
+    s.thr_now   = r & (1u << 2);
+    s.temp_now  = r & (1u << 3);
+    s.uv_boot   = r & (1u << 16);
+    s.cap_boot  = r & (1u << 17);
+    s.thr_boot  = r & (1u << 18);
+    s.temp_boot = r & (1u << 19);
+    s.throttled = s.uv_now || s.cap_now || s.thr_now || s.temp_now;
     return s;
 }

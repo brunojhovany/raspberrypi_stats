@@ -79,6 +79,19 @@ bool SSD1306::writeData(const uint8_t* data, size_t len) {
     return true;
 }
 
+void SSD1306::setInverted(bool inv) {
+    writeCmd(inv ? 0xA7 : 0xA6);
+}
+
+void SSD1306::setContrast(uint8_t value) {
+    writeCmd(0x81);
+    writeCmd(value);
+}
+
+void SSD1306::setPower(bool on) {
+    writeCmd(on ? 0xAF : 0xAE);
+}
+
 void SSD1306::clear() {
     std::fill(buf_.begin(), buf_.end(), 0);
 }
