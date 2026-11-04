@@ -12,6 +12,12 @@ public:
     bool init();
     void clear();
     void display();
+    // Hardware inversion (0xA7/0xA6); cheap way to make alerts blink
+    void setInverted(bool inv);
+    // Contrast/brightness 0..255 (0x81 cmd); lower = less OLED wear
+    void setContrast(uint8_t value);
+    // Panel on/off (0xAF/0xAE); RAM is kept while off
+    void setPower(bool on);
 
     // Framebuffer is 128x32 mono, pages of 8 rows => 4 pages * 128 cols
     static constexpr int WIDTH = 128;
@@ -20,6 +26,7 @@ public:
 
     // Pixel operations
     void setPixel(int x, int y, bool on);
+    const std::vector<uint8_t>& buffer() const { return buf_; }
     void drawHLine(int x, int y, int w, bool on = true);
     void drawText(int x, int y, const std::string& text); // 5x7 font
     // Note: For portrait (32x128) rendering, rotate coordinates in caller
